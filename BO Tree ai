@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BO Tree - Academic Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Ensure dynamic colors work
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Import Map for React and Lucide -->
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+            }
+        }
+    </script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <!-- Hidden div for Tailwind dynamic classes -->
+    <div class="hidden 
+        bg-blue-50 border-blue-200 hover:border-blue-400
+        bg-purple-50 border-purple-200 hover:border-purple-400
+        bg-green-50 border-green-200 hover:border-green-400
+        bg-indigo-50 border-indigo-200 hover:border-indigo-400
+        bg-orange-50 border-orange-200 hover:border-orange-400
+        bg-emerald-50 border-emerald-200 hover:border-emerald-400
+    "></div>
+
+    <script type="text/babel" data-type="module" data-presets="react">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import {
+            Home, MessageSquare, Users, User, LogOut, Plus, ThumbsUp, MessageCircle, Award, Filter, Search, Edit2, Mail,
+            Phone, MapPin, Briefcase, GraduationCap, Target, TrendingUp, Calendar, CheckCircle, Clock, AlertCircle, Zap, BookOpen,
+            ArrowLeft, Eye, EyeOff, Save, X, Link as LinkIcon, Trash2, Linkedin, Github, Globe, Bot, Send, Sparkles
+        } from 'lucide-react';
+
+        // --- API Keys ---
+        const GEMINI_API_KEY = 'AIzaSyCSeP1rYCZQX1uJCYZEtDuqbgrP5Djd_6I';
+
+        // --- Data & Constants ---
+
+        const branchCodes = {
+            'CB': 'Computer Science',
+            'ME': 'Mechanical Engineering',
+            'EC': 'Electronics & Communication',
+            'CE': 'Civil Engineering',
+            'EE': 'Electrical Engineering',
+            'IT': 'Information Technology',
+            'CH': 'Chemical Engineering',
+            'BT': 'Biotechnology'
+        };
+
+        const careerFields = [
+            { id: 1, name: 'Software Development', icon: '💻', color: 'blue' },
+            { id: 2, name: 'Data Science & AI', icon: '🤖', color: 'purple' },
+            { id: 3, name: 'Product Management', icon: '📊', color: 'green' },
+            { id: 4, name: 'Research & Academia', icon: '🔬', color: 'indigo' },
+            { id: 5, name: 'Entrepreneurship', icon: '🚀', color: 'orange' },
+            { id: 6, name: 'Finance & Banking', icon: '💰', color: 'emerald' }
+        ];
+
+        const careerRoadmaps = {
+            'Software Development': {
+                field: 'Software Development',
+                currentLevel: 'Beginner',
+                progress: 25,
+                milestones: [
+                    { id: 1, title: 'Master a Programming Language (Python/Java/JS)', status: 'in-progress', date: 'Month 1-2' },
+                    { id: 2, title: 'Learn Data Structures & Algorithms', status: 'upcoming', date: 'Month 2-4' },
+                    { id: 3, title: 'Build Full-Stack Projects (3-5 projects)', status: 'upcoming', date: 'Month 4-6' },
+                    { id: 4, title: 'Contribute to Open Source', status: 'upcoming', date: 'Month 6-8' },
+                    { id: 5, title: 'Apply for SDE Internships', status: 'upcoming', date: 'Month 8-10' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'Google Summer of Code 2025', date: 'Mar 2025', type: 'Program', relevance: 98 },
+                    { id: 2, title: 'Amazon SDE Hiring Challenge', date: 'Feb 2025', type: 'Opportunity', relevance: 95 },
+                    { id: 3, title: 'Hackathon - HackWithInfy', date: 'Jan 2025', type: 'Competition', relevance: 90 }
+                ],
+                recommendedSkills: [
+                    { skill: 'Data Structures', priority: 'High', progress: 30 },
+                    { skill: 'System Design', priority: 'High', progress: 10 },
+                    { skill: 'Git & GitHub', priority: 'Medium', progress: 50 },
+                    { skill: 'REST APIs', priority: 'Medium', progress: 20 }
+                ]
+            },
+            'Data Science & AI': {
+                field: 'Data Science & AI',
+                currentLevel: 'Beginner',
+                progress: 35,
+                milestones: [
+                    { id: 1, title: 'Learn Python & Libraries (NumPy, Pandas)', status: 'completed', date: 'Month 1' },
+                    { id: 2, title: 'Complete ML Fundamentals Course', status: 'in-progress', date: 'Month 2-3' },
+                    { id: 3, title: 'Build 3 ML Projects (Kaggle)', status: 'upcoming', date: 'Month 3-5' },
+                    { id: 4, title: 'Learn Deep Learning & NLP', status: 'upcoming', date: 'Month 5-7' },
+                    { id: 5, title: 'Data Science Internship', status: 'upcoming', date: 'Month 8' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'Kaggle Competition - Tabular Data', date: 'Jan 2025', type: 'Competition', relevance: 95 },
+                    { id: 2, title: 'Google AI Workshop', date: 'Feb 2025', type: 'Workshop', relevance: 98 },
+                    { id: 3, title: 'TCS Data Science Internship', date: 'Mar 2025', type: 'Opportunity', relevance: 92 }
+                ],
+                recommendedSkills: [
+                    { skill: 'Python', priority: 'High', progress: 70 },
+                    { skill: 'Machine Learning', priority: 'High', progress: 45 },
+                    { skill: 'SQL & Databases', priority: 'Medium', progress: 60 },
+                    { skill: 'Deep Learning', priority: 'Medium', progress: 20 }
+                ]
+            },
+            'Product Management': {
+                field: 'Product Management',
+                currentLevel: 'Beginner',
+                progress: 20,
+                milestones: [
+                    { id: 1, title: 'Learn Product Thinking & User Research', status: 'in-progress', date: 'Month 1-2' },
+                    { id: 2, title: 'Master Roadmap & Prioritization Frameworks', status: 'upcoming', date: 'Month 2-3' },
+                    { id: 3, title: 'Build a Product Case Study Portfolio', status: 'upcoming', date: 'Month 3-5' },
+                    { id: 4, title: 'Get APM/PM Internship', status: 'upcoming', date: 'Month 6-8' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'Google APM Program Applications', date: 'Feb 2025', type: 'Opportunity', relevance: 98 },
+                    { id: 2, title: 'Product School Webinar', date: 'Jan 2025', type: 'Workshop', relevance: 85 },
+                    { id: 3, title: 'PM Case Competition - IIM', date: 'Mar 2025', type: 'Competition', relevance: 90 }
+                ],
+                recommendedSkills: [
+                    { skill: 'User Research', priority: 'High', progress: 25 },
+                    { skill: 'Data Analysis', priority: 'High', progress: 30 },
+                    { skill: 'Wireframing (Figma)', priority: 'Medium', progress: 15 },
+                    { skill: 'SQL Basics', priority: 'Medium', progress: 40 }
+                ]
+            },
+            'Research & Academia': {
+                field: 'Research & Academia',
+                currentLevel: 'Beginner',
+                progress: 15,
+                milestones: [
+                    { id: 1, title: 'Identify Research Area of Interest', status: 'in-progress', date: 'Month 1' },
+                    { id: 2, title: 'Read 20+ Research Papers', status: 'upcoming', date: 'Month 1-3' },
+                    { id: 3, title: 'Join a Research Lab / Professor', status: 'upcoming', date: 'Month 3-4' },
+                    { id: 4, title: 'Publish First Paper', status: 'upcoming', date: 'Month 6-12' },
+                    { id: 5, title: 'Apply for PhD / Research Programs', status: 'upcoming', date: 'Year 2' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'MITACS Research Internship', date: 'Jan 2025', type: 'Program', relevance: 95 },
+                    { id: 2, title: 'IEEE Conference Submissions', date: 'Feb 2025', type: 'Opportunity', relevance: 90 },
+                    { id: 3, title: 'DAAD WISE Scholarship', date: 'Mar 2025', type: 'Scholarship', relevance: 92 }
+                ],
+                recommendedSkills: [
+                    { skill: 'Literature Review', priority: 'High', progress: 20 },
+                    { skill: 'LaTeX Writing', priority: 'High', progress: 10 },
+                    { skill: 'Statistical Analysis', priority: 'Medium', progress: 30 },
+                    { skill: 'Research Tools (Mendeley)', priority: 'Medium', progress: 25 }
+                ]
+            },
+            'Entrepreneurship': {
+                field: 'Entrepreneurship',
+                currentLevel: 'Idea Stage',
+                progress: 10,
+                milestones: [
+                    { id: 1, title: 'Validate Your Startup Idea', status: 'in-progress', date: 'Month 1' },
+                    { id: 2, title: 'Build MVP (Minimum Viable Product)', status: 'upcoming', date: 'Month 2-4' },
+                    { id: 3, title: 'Get First 100 Users/Customers', status: 'upcoming', date: 'Month 4-6' },
+                    { id: 4, title: 'Apply to Incubators/Accelerators', status: 'upcoming', date: 'Month 6-8' },
+                    { id: 5, title: 'Raise Pre-Seed/Seed Funding', status: 'upcoming', date: 'Year 1-2' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'Y Combinator Applications', date: 'Mar 2025', type: 'Accelerator', relevance: 98 },
+                    { id: 2, title: 'College Startup Pitch Competition', date: 'Feb 2025', type: 'Competition', relevance: 95 },
+                    { id: 3, title: 'Startup India Workshop', date: 'Jan 2025', type: 'Workshop', relevance: 85 }
+                ],
+                recommendedSkills: [
+                    { skill: 'Pitching & Communication', priority: 'High', progress: 30 },
+                    { skill: 'Financial Modeling', priority: 'High', progress: 15 },
+                    { skill: 'No-Code Tools', priority: 'Medium', progress: 40 },
+                    { skill: 'Marketing & Growth', priority: 'Medium', progress: 20 }
+                ]
+            },
+            'Finance & Banking': {
+                field: 'Finance & Banking',
+                currentLevel: 'Beginner',
+                progress: 20,
+                milestones: [
+                    { id: 1, title: 'Learn Financial Fundamentals & Accounting', status: 'in-progress', date: 'Month 1-2' },
+                    { id: 2, title: 'Master Excel & Financial Modeling', status: 'upcoming', date: 'Month 2-4' },
+                    { id: 3, title: 'Get CFA Level 1 / FRM Certification', status: 'upcoming', date: 'Month 6-12' },
+                    { id: 4, title: 'Investment Banking / Analyst Internship', status: 'upcoming', date: 'Year 2' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'Goldman Sachs Summer Analyst', date: 'Feb 2025', type: 'Opportunity', relevance: 98 },
+                    { id: 2, title: 'CFA Level 1 Exam', date: 'Jun 2025', type: 'Certification', relevance: 95 },
+                    { id: 3, title: 'Finance Case Competition - IIM', date: 'Mar 2025', type: 'Competition', relevance: 90 }
+                ],
+                recommendedSkills: [
+                    { skill: 'Financial Modeling', priority: 'High', progress: 20 },
+                    { skill: 'Excel Advanced', priority: 'High', progress: 35 },
+                    { skill: 'Valuation Methods', priority: 'Medium', progress: 15 },
+                    { skill: 'Bloomberg Terminal', priority: 'Medium', progress: 5 }
+                ]
+            }
+        };
+
+        // --- Utils ---
+
+        const validateCollegeId = (id, type) => {
+            if (type === 'student') {
+                // Format: BTCB25O1100 (DegreeTypeBranchYearRollNumber)
+                const regex = /^([A-Z]{2})([A-Z]{2})(\d{2})O(\d{4})$/;
+                const match = id.match(regex);
+
+                if (!match) {
+                    return { valid: false, error: 'Invalid College ID format. Example: BTCB25O1100' };
+                }
+
+                const [_, degreeType, branch, year, rollNumber] = match;
+
+                if (!branchCodes[branch]) {
+                    return { valid: false, error: 'Invalid branch code' };
+                }
+
+                const degreeTypes = {
+                    'BT': 'B.Tech', 'MT': 'M.Tech', 'MB': 'MBA', 'MS': 'M.Sc', 'BS': 'B.Sc', 'BC': 'B.Com'
+                };
+
+                if (!degreeTypes[degreeType]) {
+                    return { valid: false, error: 'Invalid degree type. Use BT, MT, MB, MS, BS, or BC' };
+                }
+
+                return {
+                    valid: true,
+                    data: {
+                        degreeType: degreeTypes[degreeType],
+                        admissionYear: `20${year}`,
+                        branch: branchCodes[branch],
+                        branchCode: branch,
+                        rollNumber
+                    }
+                };
+            } else {
+                // Faculty ID format: FAC001
+                const regex = /^FAC\d{3,5}$/;
+                if (!regex.test(id)) {
+                    return { valid: false, error: 'Invalid Faculty ID format. Example: FAC001' };
+                }
+                return { valid: true, data: {} };
+            }
+        };
+
+        const generateEmail = (collegeId, type) => {
+            if (type === 'student') {
+                return `${collegeId.toLowerCase()}@college.edu`;
+            } else {
+                return `${collegeId.toLowerCase()}@faculty.college.edu`;
+            }
+        };
+
+        const getSocialIcon = (platform) => {
+            switch (platform.toLowerCase()) {
+                case 'linkedin': return <Linkedin size={18} />;
+                case 'github': return <Github size={18} />;
+                default: return <LinkIcon size={18} />;
+            }
+        };
+
+        // --- Components ---
+
+        const LoginScreen = ({ onLogin }) => {
+            const [loginType, setLoginType] = useState(null); // 'student' or 'faculty'
+            const [showRegister, setShowRegister] = useState(false);
+            const [showPassword, setShowPassword] = useState(false);
+            const [formErrors, setFormErrors] = useState({});
+
+            // Login Form State
+            const [loginForm, setLoginForm] = useState({ collegeId: '', password: '' });
+
+            // Register Form State
+            const [registerForm, setRegisterForm] = useState({
+                name: '', collegeId: '', email: '', password: '', confirmPassword: '',
+                branch: '', year: '', rollNumber: '', phone: ''
+            });
+
+            const handleRegisterSubmit = (e) => {
+                e.preventDefault();
+                const errors = {};
+
+                if (!registerForm.name.trim()) errors.name = 'Name is required';
+                if (!registerForm.collegeId.trim()) errors.collegeId = 'College ID is required';
+                if (!registerForm.password) errors.password = 'Password is required';
+                if (registerForm.password.length < 6) errors.password = 'Password must be at least 6 characters';
+                if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+
+                const idValidation = validateCollegeId(registerForm.collegeId, loginType);
+                if (!idValidation.valid) {
+                    errors.collegeId = idValidation.error;
+                }
+
+                if (Object.keys(errors).length > 0) {
+                    setFormErrors(errors);
+                    return;
+                }
+
+                const email = generateEmail(registerForm.collegeId, loginType);
+                const userData = {
+                    type: loginType,
+                    name: registerForm.name,
+                    collegeId: registerForm.collegeId,
+                    email: email,
+                    ...idValidation.data
+                };
+
+                onLogin(userData);
+            };
+
+            const handleLoginSubmit = (e) => {
+                e.preventDefault();
+                const errors = {};
+
+                if (!loginForm.collegeId.trim()) {
+                    errors.collegeId = 'College ID is required';
+                    setFormErrors(errors);
+                    return;
+                }
+                if (!loginForm.password) {
+                    errors.password = 'Password is required';
+                    setFormErrors(errors);
+                    return;
+                }
+
+                // Validate College ID format
+                const idValidation = validateCollegeId(loginForm.collegeId, loginType);
+                if (!idValidation.valid) {
+                    errors.collegeId = idValidation.error;
+                    setFormErrors(errors);
+                    return;
+                }
+
+                const email = generateEmail(loginForm.collegeId, loginType);
+                const userData = {
+                    type: loginType,
+                    name: loginType === 'student' ? 'Ananya Verma' : 'Dr. Rajesh Kumar',
+                    collegeId: loginForm.collegeId,
+                    email: email,
+                    ...idValidation.data
+                };
+
+                onLogin(userData);
+            };
+
+            if (showRegister) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl">
+                            <button onClick={() => {
+                                setShowRegister(false);
+                                setFormErrors({});
+                                setRegisterForm({
+                                    name: '', collegeId: '', email: '', password: '',
+                                    confirmPassword: '', branch: '', year: '', rollNumber: '', phone: ''
+                                });
+                            }}
+                                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+                            >
+                                <ArrowLeft size={20} />
+                                Back to Login
+                            </button>
+
+                            <div className="text-center mb-6">
+                                <h1 className="text-3xl font-bold text-green-700 mb-2">Register for BO Tree</h1>
+                                <p className="text-gray-600">Create your {loginType} account</p>
+                            </div>
+
+                            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                    <input type="text" value={registerForm.name} onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder="Enter your full name"
+                                    />
+                                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        College ID *
+                                        <span className="text-xs text-gray-500 ml-2">
+                                            {loginType === 'student' ? '(Format: BTCB25O1100)' : '(Format: FAC001)'}
+                                        </span>
+                                    </label>
+                                    <input type="text" value={registerForm.collegeId} onChange={(e) => {
+                                        const value = e.target.value.toUpperCase();
+                                        setRegisterForm(prev => {
+                                            const newState = { ...prev, collegeId: value };
+                                            if (value.length > 0) {
+                                                newState.email = generateEmail(value, loginType);
+                                            }
+                                            return newState;
+                                        });
+                                    }}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder={loginType === 'student' ? "BTCB25O1100" : "FAC001"}
+                                    />
+                                    {formErrors.collegeId && <p className="text-red-500 text-sm mt-1">{formErrors.collegeId}</p>}
+
+                                    {loginType === 'student' && (
+                                        <div className="mt-2 text-xs text-gray-600 bg-blue-50 p-3 rounded-lg">
+                                            <p className="font-semibold mb-1">ID Format Breakdown:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li><strong>BT</strong> - Degree type</li>
+                                                <li><strong>CB</strong> - Branch code</li>
+                                                <li><strong>25</strong> - Admission year (2025)</li>
+                                                <li><strong>O</strong> - Separator (always 'O')</li>
+                                                <li><strong>1100</strong> - Roll number</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        College Email (Auto-generated)
+                                    </label>
+                                    <input type="email" value={registerForm.email} readOnly
+                                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 outline-none"
+                                        placeholder="Email will be generated from College ID"
+                                    />
+                                </div>
+
+                                {loginType === 'student' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                        <input type="tel" value={registerForm.phone} onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                            placeholder="+91 98765 43210"
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                                    <div className="relative">
+                                        <input type={showPassword ? "text" : "password"} value={registerForm.password} onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none pr-10"
+                                            placeholder="Minimum 6 characters"
+                                        />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                        >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                    {formErrors.password && <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                                    <input type={showPassword ? "text" : "password"} value={registerForm.confirmPassword}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder="Re-enter your password"
+                                    />
+                                    {formErrors.confirmPassword && <p className="text-red-500 text-sm mt-1">{formErrors.confirmPassword}</p>}
+                                </div>
+
+                                <button type="submit"
+                                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                                    Create Account
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (loginType) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                            <button onClick={() => {
+                                setLoginType(null);
+                                setFormErrors({});
+                                setLoginForm({ collegeId: '', password: '' });
+                            }}
+                                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+                            >
+                                <ArrowLeft size={20} />
+                                Back
+                            </button>
+
+                            <div className="text-center mb-8">
+                                <h1 className="text-3xl font-bold text-green-700 mb-2">
+                                    {loginType === 'student' ? 'Student Login' : 'Faculty Login'}
+                                </h1>
+                                <p className="text-gray-600">Sign in with your college credentials</p>
+                            </div>
+
+                            <form onSubmit={handleLoginSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        College ID
+                                        <span className="text-xs text-gray-500 ml-2">
+                                            {loginType === 'student' ? '(e.g., BTCB25O1100)' : '(e.g., FAC001)'}
+                                        </span>
+                                    </label>
+                                    <input type="text" value={loginForm.collegeId} onChange={(e) => setLoginForm({ ...loginForm, collegeId: e.target.value.toUpperCase() })}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder={loginType === 'student' ? "BTCB25O1100" : "FAC001"}
+                                    />
+                                    {formErrors.collegeId && <p className="text-red-500 text-sm mt-1">{formErrors.collegeId}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                    <div className="relative">
+                                        <input type={showPassword ? "text" : "password"} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none pr-10"
+                                            placeholder="Enter your password"
+                                        />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                        >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                    {formErrors.password && <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>}
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm">
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" className="rounded" />
+                                        <span className="text-gray-600">Remember me</span>
+                                    </label>
+                                    <a href="#" className="text-green-600 hover:text-green-700">Forgot password?</a>
+                                </div>
+
+                                <button type="submit"
+                                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                                    Sign In
+                                </button>
+                            </form>
+
+                            <div className="mt-6 text-center">
+                                <p className="text-gray-600">
+                                    Don't have an account?{' '}
+                                    <button onClick={() => { setShowRegister(true); setFormErrors({}); }}
+                                        className="text-green-600 hover:text-green-700 font-semibold"
+                                    >
+                                        Register here
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-bold text-green-700 mb-2">🌳 BO Tree</h1>
+                            <p className="text-gray-600">Grow Your Knowledge Together</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <button onClick={() => setLoginType('student')}
+                                className="w-full bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 transition font-semibold text-lg"
+                            >
+                                Student Login
+                            </button>
+
+                            <button onClick={() => setLoginType('faculty')}
+                                className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-semibold text-lg"
+                            >
+                                Faculty Login
+                            </button>
+                        </div>
+
+                        <p className="text-center text-sm text-gray-500 mt-6">
+                            Use your official college ID to access the platform
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        const EditProfileModal = ({ profile, onSave, onCancel }) => {
+            const [formData, setFormData] = useState({ ...profile });
+            const [newLink, setNewLink] = useState({ platform: 'LinkedIn', url: '' });
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            const handleAddLink = () => {
+                if (newLink.url) {
+                    setFormData(prev => ({
+                        ...prev,
+                        socialLinks: [...(prev.socialLinks || []), newLink]
+                    }));
+                    setNewLink({ platform: 'LinkedIn', url: '' });
+                }
+            };
+
+            const handleRemoveLink = (index) => {
+                setFormData(prev => ({
+                    ...prev,
+                    socialLinks: prev.socialLinks.filter((_, i) => i !== index)
+                }));
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">Edit Profile</h2>
+                            <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input type="text" name="name" value={formData.name} onChange={handleChange}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                                <textarea name="bio" value={formData.bio} onChange={handleChange} rows="3"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"></textarea>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input type="text" name="phone" value={formData.phone} onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                    <input type="text" name="location" value={formData.location} onChange={handleChange}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-4">
+                                <h3 className="text-lg font-semibold mb-3">Social & Education Links</h3>
+
+                                <div className="space-y-3 mb-4">
+                                    {(formData.socialLinks || []).map((link, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+                                            {getSocialIcon(link.platform)}
+                                            <span className="font-medium text-gray-700 w-24">{link.platform}:</span>
+                                            <span className="flex-1 text-gray-600 truncate">{link.url}</span>
+                                            <button onClick={() => handleRemoveLink(idx)} className="text-red-500 hover:text-red-700">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <select value={newLink.platform} onChange={(e) => setNewLink({ ...newLink, platform: e.target.value })}
+                                        className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white">
+                                        <option value="LinkedIn">LinkedIn</option>
+                                        <option value="GitHub">GitHub</option>
+                                        <option value="Portfolio">Portfolio</option>
+                                        <option value="Institute">Institute</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <input type="text" placeholder="https://..." value={newLink.url}
+                                        onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                                        className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                    />
+                                    <button onClick={handleAddLink} className="bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200">
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button onClick={onCancel} className="px-6 py-2 border rounded-lg hover:bg-gray-50 text-gray-700">Cancel</button>
+                            <button onClick={() => onSave(formData)} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center gap-2">
+                                <Save size={18} /> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AskQuestionModal = ({ onSubmit, onCancel, currentUser }) => {
+            const [form, setForm] = useState({ title: '', content: '', category: 'Programming' });
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (form.title.trim() && form.content.trim()) {
+                    onSubmit({ ...form, author: currentUser.name, authorType: currentUser.type });
+                }
+            };
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">Ask a Question</h2>
+                            <button onClick={onCancel} className="text-gray-500 hover:text-gray-700"><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                    placeholder="What's your question?" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Details *</label>
+                                <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows="4"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                    placeholder="Describe your question in detail..."></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white">
+                                    <option>Programming</option><option>Physics</option><option>Mathematics</option><option>Chemistry</option><option>General</option>
+                                </select>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button type="button" onClick={onCancel} className="px-6 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">Post Question</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const CreateCommunityModal = ({ onSubmit, onCancel }) => {
+            const [form, setForm] = useState({ name: '', department: 'CS', description: '' });
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (form.name.trim()) { onSubmit(form); }
+            };
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">Create Community</h2>
+                            <button onClick={onCancel} className="text-gray-500 hover:text-gray-700"><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Community Name *</label>
+                                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="e.g., AI Enthusiasts" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Branch/Department</label>
+                                <select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white">
+                                    <option value="CS">Computer Science</option><option value="ME">Mechanical</option><option value="EC">Electronics</option><option value="CE">Civil</option><option value="ALL">All Branches</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows="3"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="What is this community about?"></textarea>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button type="button" onClick={onCancel} className="px-6 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">Create</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const ChatView = ({ community, onBack, currentUser }) => {
+            const [messages, setMessages] = useState([
+                { id: 1, author: 'Priya S.', content: 'Hey everyone! Any tips for DSA?', time: '10:30 AM' },
+                { id: 2, author: 'Rahul K.', content: 'Practice on LeetCode daily!', time: '10:32 AM' }
+            ]);
+            const [newMsg, setNewMsg] = useState('');
+            const sendMessage = () => {
+                if (newMsg.trim()) {
+                    setMessages([...messages, { id: Date.now(), author: currentUser.name, content: newMsg, time: 'Just now' }]);
+                    setNewMsg('');
+                }
+            };
+            return (
+                <div className="max-w-4xl mx-auto p-6">
+                    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div className="bg-gradient-to-r from-green-600 to-blue-600 p-4 text-white flex items-center gap-4">
+                            <button onClick={onBack} className="hover:bg-white/20 p-2 rounded-lg"><ArrowLeft size={20} /></button>
+                            <div>
+                                <h2 className="text-xl font-bold">{community.name}</h2>
+                                <p className="text-sm opacity-90">{community.members} members</p>
+                            </div>
+                        </div>
+                        <div className="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                            {messages.map(msg => (
+                                <div key={msg.id} className={`flex ${msg.author === currentUser.name ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-xs px-4 py-2 rounded-xl ${msg.author === currentUser.name ? 'bg-green-500 text-white' : 'bg-white shadow'}`}>
+                                        {msg.author !== currentUser.name && <p className="text-xs font-semibold text-gray-600 mb-1">{msg.author}</p>}
+                                        <p>{msg.content}</p>
+                                        <p className={`text-xs mt-1 ${msg.author === currentUser.name ? 'text-green-100' : 'text-gray-400'}`}>{msg.time}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="p-4 bg-white border-t flex gap-2">
+                            <input type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                                className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="Type a message..." />
+                            <button onClick={sendMessage} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-semibold">Send</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProfileView = ({ userProfile, onEditClick }) => (
+            <div className="max-w-4xl mx-auto p-6">
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div className="bg-gradient-to-r from-green-600 to-blue-600 h-32"></div>
+                    <div className="px-6 pb-6">
+                        <div className="flex items-start -mt-16 mb-4">
+                            <div className="bg-white rounded-full p-2 shadow-lg">
+                                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                                    {userProfile.name.charAt(0)}
+                                </div>
+                            </div>
+                            <button onClick={onEditClick} className="ml-auto mt-20 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                                <Edit2 size={16} />
+                                Edit Profile
+                            </button>
+                        </div>
+
+                        <h2 className="text-3xl font-bold text-gray-800">{userProfile.name}</h2>
+                        <p className="text-gray-600">{userProfile.department} | {userProfile.year || 'Faculty'}</p>
+
+                        <div className="flex items-center gap-6 mt-4 text-sm text-gray-600 flex-wrap">
+                            <div className="flex items-center gap-2"><Mail size={16} />{userProfile.email}</div>
+                            <div className="flex items-center gap-2"><Phone size={16} />{userProfile.phone}</div>
+                            <div className="flex items-center gap-2"><MapPin size={16} />{userProfile.location}</div>
+                        </div>
+
+                        {userProfile.socialLinks && userProfile.socialLinks.length > 0 && (
+                            <div className="flex gap-3 mt-4">
+                                {userProfile.socialLinks.map((link, idx) => (
+                                    <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer"
+                                        className="p-2 bg-gray-100 rounded-full text-gray-600 hover:bg-green-100 hover:text-green-700 transition"
+                                        title={link.platform}>
+                                        {getSocialIcon(link.platform)}
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="mt-6 p-4 bg-green-50 rounded-lg flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Award size={24} className="text-green-600" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Reputation Score</p>
+                                    <p className="text-2xl font-bold text-green-600">{userProfile.reputation}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-2">About</h3>
+                            <p className="text-gray-700">{userProfile.bio || "No bio added yet."}</p>
+                        </div>
+
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                                <Briefcase size={20} />
+                                Experience
+                            </h3>
+                            {userProfile.experiences && userProfile.experiences.length > 0 ? userProfile.experiences.map((exp, idx) => (
+                                <div key={idx} className="mb-3 p-4 bg-gray-50 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800">{exp.title}</h4>
+                                    <p className="text-gray-600">{exp.company}</p>
+                                    <p className="text-sm text-gray-500">{exp.duration}</p>
+                                </div>
+                            )) : <p className="text-gray-500">No experience added.</p>}
+                            <button className="mt-2 text-green-600 hover:text-green-700 flex items-center gap-2">
+                                <Plus size={16} />
+                                Add Experience
+                            </button>
+                        </div>
+
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-3">Skills</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {userProfile.skills && userProfile.skills.map((skill, idx) => (
+                                    <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">{skill}</span>
+                                ))}
+                                <button className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-gray-200">+ Add Skill</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const ForumView = ({ questions, onAskQuestion }) => (
+            <div className="max-w-6xl mx-auto p-6">
+                <div className="mb-6 flex gap-4">
+                    <div className="flex-1">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                            <input type="text" placeholder="Search questions..."
+                                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+                        </div>
+                    </div>
+                    <select className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                        <option>All Categories</option>
+                        <option>Programming</option>
+                        <option>Physics</option>
+                        <option>Mathematics</option>
+                    </select>
+                    <button onClick={onAskQuestion}
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold">
+                        <Plus size={20} />
+                        Ask Question
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    {questions.map(q => (
+                        <div key={q.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+                            <div className="flex gap-4">
+                                <div className="flex flex-col items-center gap-2">
+                                    <button className="text-gray-400 hover:text-green-600">
+                                        <ThumbsUp size={20} />
+                                    </button>
+                                    <span className="text-lg font-bold text-gray-700">{q.votes}</span>
+                                </div>
+
+                                <div className="flex-1">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 className="text-xl font-semibold text-gray-800 hover:text-green-600 cursor-pointer">
+                                                {q.title}
+                                            </h3>
+                                            <p className="text-gray-600 mt-1">{q.content}</p>
+                                        </div>
+                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                                            {q.category}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-sm text-gray-500 mt-4">
+                                        <span>Asked by <strong>{q.author}</strong> ({q.authorType})</span>
+                                        <span>•</span>
+                                        <span>{q.timestamp}</span>
+                                        <span>•</span>
+                                        <span className="flex items-center gap-1">
+                                            <MessageCircle size={16} />
+                                            {q.answers} answers
+                                        </span>
+                                    </div>
+
+                                    {q.comments.length > 0 && (
+                                        <div className="mt-4 space-y-2 border-l-2 border-gray-200 pl-4">
+                                            {q.comments.map(comment => (
+                                                <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-700">{comment.author}</p>
+                                                            <p className="text-sm text-gray-600 mt-1">{comment.content}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-green-600">
+                                                            <ThumbsUp size={14} />
+                                                            <span className="text-sm">{comment.votes}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <button className="text-green-600 text-sm hover:text-green-700 flex items-center gap-1 mt-2">
+                                                <Plus size={14} />
+                                                Add Comment
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const CommunityView = ({ communities, onCreate, onOpenChat }) => (
+            <div className="max-w-6xl mx-auto p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold text-gray-800">Department Communities</h2>
+                    <button onClick={onCreate} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold">
+                        <Plus size={20} /> Create Community
+                    </button>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {communities.map(community => (
+                        <div key={community.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                                    {community.department}
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-800">{community.name}</h3>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-600 mb-4">
+                                <div className="flex items-center gap-1"><Users size={16} /><span>{community.members} members</span></div>
+                                <div className="flex items-center gap-1"><MessageSquare size={16} /><span>{community.posts} posts</span></div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition font-semibold">Join</button>
+                                <button onClick={() => onOpenChat(community)} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center gap-1">
+                                    <MessageCircle size={16} /> Chat
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const CareerPathSetup = ({ onSelectPath, onSkip }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="p-8">
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Career Path 🎯</h2>
+                            <p className="text-gray-600">Select a field you want to pursue, and we'll create a personalized roadmap for you</p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                            {careerFields.map(field => (
+                                <button key={field.id} onClick={() => onSelectPath(field.name)}
+                                    className={`p-6 border-2 rounded-xl hover:shadow-lg transition bg-${field.color}-50 border-${field.color}-200 hover:border-${field.color}-400`}
+                                >
+                                    <div className="text-4xl mb-3">{field.icon}</div>
+                                    <h3 className="font-semibold text-gray-800">{field.name}</h3>
+                                </button>
+                            ))}
+                        </div>
+
+                        <button onClick={onSkip} className="w-full py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            Skip for Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const CareerRoadmapView = ({ roadmap, onChangePath }) => (
+            <div className="max-w-7xl mx-auto p-6">
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                            <Target className="text-green-600" size={32} />
+                            Your Career Roadmap
+                        </h2>
+                        <p className="text-gray-600 mt-1">Personalized path to become a {roadmap.field} professional</p>
+                    </div>
+                    <button onClick={onChangePath}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                        <Edit2 size={16} />
+                        Change Path
+                    </button>
+                </div>
+
+                {/* Progress Overview */}
+                <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-2xl font-bold">Overall Progress</h3>
+                            <p className="opacity-90">Keep pushing forward! 🚀</p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-4xl font-bold">{roadmap.progress}%</div>
+                            <div className="text-sm opacity-90">{roadmap.currentLevel}</div>
+                        </div>
+                    </div>
+                    <div className="bg-white bg-opacity-20 rounded-full h-3">
+                        <div className="bg-white rounded-full h-3 transition-all duration-500" style={{ width: `${roadmap.progress}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-6">
+                    {/* Left Column */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Events */}
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Zap className="text-yellow-500" size={24} />
+                                Upcoming Opportunities
+                            </h3>
+                            <div className="space-y-3">
+                                {roadmap.upcomingEvents.map(event => (
+                                    <div key={event.id} className="border-l-4 border-green-500 pl-4 py-3 bg-green-50 rounded-r-lg hover:bg-green-100 transition cursor-pointer">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <h4 className="font-semibold text-gray-800">{event.title}</h4>
+                                                <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                                                    <span className="flex items-center gap-1"><Calendar size={14} />{event.date}</span>
+                                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{event.type}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <TrendingUp className="text-green-600" size={16} />
+                                                <span className="text-sm font-semibold text-green-600">{event.relevance}% Match</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {/* Milestones */}
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <BookOpen size={24} className="text-blue-500" />
+                                Your Learning Path
+                            </h3>
+                            <div className="space-y-4">
+                                {roadmap.milestones.map((milestone, idx) => (
+                                    <div key={milestone.id} className="flex gap-4">
+                                        <div className="flex flex-col items-center">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${milestone.status === 'completed' ? 'bg-green-500' : milestone.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                                                {milestone.status === 'completed' ? <CheckCircle className="text-white" size={20} /> :
+                                                    milestone.status === 'in-progress' ? <Clock className="text-white" size={20} /> :
+                                                        <AlertCircle className="text-white" size={20} />}
+                                            </div>
+                                            {idx < roadmap.milestones.length - 1 && (
+                                                <div className={`w-0.5 h-16 ${milestone.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 pb-8">
+                                            <h4 className="font-semibold text-gray-800">{milestone.title}</h4>
+                                            <p className="text-sm text-gray-500 mt-1">{milestone.date}</p>
+                                            <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${milestone.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                milestone.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                {milestone.status === 'completed' ? 'Completed' : milestone.status === 'in-progress' ? 'In Progress' : 'Upcoming'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4">Skills to Master</h3>
+                            <div className="space-y-4">
+                                {roadmap.recommendedSkills.map((skill, idx) => (
+                                    <div key={idx}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-medium text-gray-700">{skill.skill}</span>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${skill.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{skill.priority}</span>
+                                        </div>
+                                        <div className="bg-gray-200 rounded-full h-2">
+                                            <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-full h-2" style={{ width: `${skill.progress}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const ProgressTracker = ({ progressLogs, onAddLog }) => {
+            const [showAddLog, setShowAddLog] = useState(false);
+            const [newLog, setNewLog] = useState({ title: '', description: '', category: 'Learning' });
+
+            const handleAdd = () => {
+                if (newLog.title.trim()) {
+                    onAddLog({ ...newLog, id: Date.now(), date: new Date().toLocaleDateString() });
+                    setNewLog({ title: '', description: '', category: 'Learning' });
+                    setShowAddLog(false);
+                }
+            };
+
+            return (
+                <div className="bg-white rounded-xl shadow-md p-6 mt-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <BookOpen className="text-purple-500" size={24} />
+                            My Progress Tracker
+                        </h3>
+                        <button onClick={() => setShowAddLog(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2 font-semibold">
+                            <Plus size={18} /> Add Entry
+                        </button>
+                    </div>
+
+                    {showAddLog && (
+                        <div className="mb-4 p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                            <input type="text" value={newLog.title} onChange={(e) => setNewLog({ ...newLog, title: e.target.value })}
+                                className="w-full px-4 py-2 border rounded-lg mb-2 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="What did you learn/achieve?" />
+                            <textarea value={newLog.description} onChange={(e) => setNewLog({ ...newLog, description: e.target.value })} rows="2"
+                                className="w-full px-4 py-2 border rounded-lg mb-2 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Describe what you did..."></textarea>
+                            <div className="flex gap-2">
+                                <select value={newLog.category} onChange={(e) => setNewLog({ ...newLog, category: e.target.value })}
+                                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-white">
+                                    <option>Learning</option><option>Project</option><option>Achievement</option><option>Certification</option>
+                                </select>
+                                <button onClick={handleAdd} className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">Save</button>
+                                <button onClick={() => setShowAddLog(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {progressLogs.length === 0 ? (
+                            <p className="text-gray-500 text-center py-4">No entries yet. Start tracking your progress!</p>
+                        ) : progressLogs.map(log => (
+                            <div key={log.id} className="border-l-4 border-purple-500 pl-4 py-2 bg-gray-50 rounded-r-lg">
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xs px-2 py-1 rounded-full ${log.category === 'Learning' ? 'bg-blue-100 text-blue-700' : log.category === 'Project' ? 'bg-green-100 text-green-700' : log.category === 'Achievement' ? 'bg-yellow-100 text-yellow-700' : 'bg-purple-100 text-purple-700'}`}>{log.category}</span>
+                                    <span className="text-xs text-gray-500">{log.date}</span>
+                                </div>
+                                <h4 className="font-semibold text-gray-800 mt-1">{log.title}</h4>
+                                {log.description && <p className="text-sm text-gray-600">{log.description}</p>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const FacultyDashboard = ({ currentUser }) => {
+            const [careerPlans, setCareerPlans] = useState([
+                { id: 1, field: 'Software Development', studentsEnrolled: 45, description: 'Full-stack development path' },
+                { id: 2, field: 'Data Science & AI', studentsEnrolled: 32, description: 'ML/AI engineering path' }
+            ]);
+            const [showCreatePlan, setShowCreatePlan] = useState(false);
+            const [newPlan, setNewPlan] = useState({ field: 'Software Development', description: '' });
+
+            const handleCreatePlan = () => {
+                if (newPlan.description.trim()) {
+                    setCareerPlans([...careerPlans, { ...newPlan, id: Date.now(), studentsEnrolled: 0 }]);
+                    setNewPlan({ field: 'Software Development', description: '' });
+                    setShowCreatePlan(false);
+                }
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto p-6">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                        <GraduationCap className="text-blue-600" size={32} />
+                        Faculty Dashboard
+                    </h2>
+
+                    {/* Stats */}
+                    <div className="grid md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-5 rounded-xl shadow-lg">
+                            <h3 className="text-sm opacity-90">Students Mentored</h3>
+                            <p className="text-3xl font-bold">127</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-5 rounded-xl shadow-lg">
+                            <h3 className="text-sm opacity-90">Questions Answered</h3>
+                            <p className="text-3xl font-bold">89</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-5 rounded-xl shadow-lg">
+                            <h3 className="text-sm opacity-90">Career Plans Created</h3>
+                            <p className="text-3xl font-bold">{careerPlans.length}</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-5 rounded-xl shadow-lg">
+                            <h3 className="text-sm opacity-90">Avg. Rating</h3>
+                            <p className="text-3xl font-bold">4.8⭐</p>
+                        </div>
+                    </div>
+
+                    {/* Career Plans */}
+                    <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-gray-800">Career Guidance Plans</h3>
+                            <button onClick={() => setShowCreatePlan(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 font-semibold">
+                                <Plus size={18} /> Create Plan
+                            </button>
+                        </div>
+
+                        {showCreatePlan && (
+                            <div className="mb-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                                <select value={newPlan.field} onChange={(e) => setNewPlan({ ...newPlan, field: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    {careerFields.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+                                </select>
+                                <textarea value={newPlan.description} onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })} rows="2"
+                                    className="w-full px-4 py-2 border rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Describe the career plan..."></textarea>
+                                <div className="flex gap-2">
+                                    <button onClick={handleCreatePlan} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Create</button>
+                                    <button onClick={() => setShowCreatePlan(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                            {careerPlans.map(plan => (
+                                <div key={plan.id} className="border rounded-lg p-4 hover:shadow-md transition">
+                                    <h4 className="font-semibold text-gray-800">{plan.field}</h4>
+                                    <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
+                                    <div className="flex items-center justify-between mt-3">
+                                        <span className="text-sm text-green-600 font-medium">{plan.studentsEnrolled} students enrolled</span>
+                                        <button className="text-blue-600 hover:text-blue-700 text-sm font-semibold">Edit Plan →</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Pending Questions */}
+                    <div className="bg-white rounded-xl shadow-md p-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Pending Student Questions</h3>
+                        <div className="space-y-3">
+                            <div className="border-l-4 border-yellow-500 pl-4 py-3 bg-yellow-50 rounded-r-lg">
+                                <h4 className="font-semibold text-gray-800">How to prepare for GATE exam?</h4>
+                                <p className="text-sm text-gray-600">Asked by Rahul S. • 2 hours ago</p>
+                                <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-semibold">Answer Question →</button>
+                            </div>
+                            <div className="border-l-4 border-yellow-500 pl-4 py-3 bg-yellow-50 rounded-r-lg">
+                                <h4 className="font-semibold text-gray-800">Best resources for System Design?</h4>
+                                <p className="text-sm text-gray-600">Asked by Priya M. • 5 hours ago</p>
+                                <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-semibold">Answer Question →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AIAssistant = ({ currentUser, careerPath }) => {
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [selectedPrompt, setSelectedPrompt] = useState(null);
+
+            const studentPrompts = [
+                { id: 1, title: '📚 Create Study Plan', prompt: `Create a detailed weekly study plan for me to achieve my career goal in ${careerPath || 'my chosen field'}. Include daily tasks, resources, and milestones.` },
+                { id: 2, title: '✍️ Prepare Answer', prompt: 'Help me prepare a structured answer for this question: ' },
+                { id: 3, title: '🎯 Goal Setting', prompt: `I want to become a ${careerPath || 'professional'} in the next 2 years. What specific steps should I take month by month?` },
+                { id: 4, title: '💡 Explain Concept', prompt: 'Explain this concept in simple terms with examples: ' },
+                { id: 5, title: '📝 Interview Prep', prompt: `Prepare me for a ${careerPath || 'technical'} interview. Give me common questions and best answers.` }
+            ];
+
+            const facultyPrompts = [
+                { id: 1, title: '📝 Create Structured Answer', prompt: 'Create a structured, academic answer for this question that I can share with students: ' },
+                { id: 2, title: '🎓 Design Curriculum', prompt: 'Help me design a curriculum or learning path for students interested in: ' },
+                { id: 3, title: '📊 Assessment Questions', prompt: 'Generate assessment questions with answers for the topic: ' },
+                { id: 4, title: '💬 Mentoring Tips', prompt: 'Give me tips for mentoring students who want to pursue a career in: ' },
+                { id: 5, title: '📖 Resource Recommendations', prompt: 'Recommend the best learning resources (books, courses, projects) for: ' }
+            ];
+
+            const prompts = currentUser?.type === 'faculty' ? facultyPrompts : studentPrompts;
+
+            const sendMessage = async (messageText) => {
+                if (!messageText.trim()) return;
+
+                const userMessage = { role: 'user', content: messageText };
+                setMessages(prev => [...prev, userMessage]);
+                setInput('');
+                setIsLoading(true);
+
+                try {
+                    const systemContext = currentUser?.type === 'faculty'
+                        ? 'You are an AI assistant for faculty members at a college. Help them create structured answers, design curricula, and mentor students effectively. Be professional and academic.'
+                        : `You are an AI learning assistant for a college student pursuing ${careerPath || 'their career goals'}. Help them study, prepare answers, create plans, and achieve their goals. Be encouraging and practical.`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [
+                                { role: 'user', parts: [{ text: systemContext }] },
+                                { role: 'model', parts: [{ text: 'I understand. I will assist accordingly.' }] },
+                                ...messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
+                                { role: 'user', parts: [{ text: messageText }] }
+                            ],
+                            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                        })
+                    });
+
+                    const data = await response.json();
+                    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+                    setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
+                } catch (error) {
+                    setMessages(prev => [...prev, { role: 'assistant', content: 'Error connecting to AI. Please try again.' }]);
+                }
+                setIsLoading(false);
+            };
+
+            const handlePromptClick = (prompt) => {
+                if (prompt.prompt.endsWith(': ')) {
+                    setInput(prompt.prompt);
+                    setSelectedPrompt(prompt.id);
+                } else {
+                    sendMessage(prompt.prompt);
+                }
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto p-6">
+                    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-white">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 p-2 rounded-lg"><Bot size={24} /></div>
+                                <div>
+                                    <h2 className="text-xl font-bold">AI Learning Assistant</h2>
+                                    <p className="text-sm opacity-90">Powered by Google Gemini • {currentUser?.type === 'faculty' ? 'Faculty Mode' : 'Student Mode'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Prompts */}
+                        <div className="p-4 bg-gray-50 border-b">
+                            <p className="text-sm text-gray-600 mb-2 flex items-center gap-1"><Sparkles size={14} /> Quick Actions:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {prompts.map(p => (
+                                    <button key={p.id} onClick={() => handlePromptClick(p)}
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${selectedPrompt === p.id ? 'bg-purple-600 text-white' : 'bg-white border hover:bg-purple-50 hover:border-purple-300'}`}>
+                                        {p.title}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Chat Messages */}
+                        <div className="h-96 overflow-y-auto p-4 space-y-4">
+                            {messages.length === 0 && (
+                                <div className="text-center text-gray-500 py-12">
+                                    <Bot size={48} className="mx-auto mb-3 opacity-50" />
+                                    <p className="text-lg font-medium">Hi {currentUser?.name?.split(' ')[0]}! 👋</p>
+                                    <p className="text-sm">I'm your AI assistant. Ask me anything or use the quick actions above!</p>
+                                </div>
+                            )}
+                            {messages.map((msg, idx) => (
+                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${msg.role === 'user' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                                        <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {isLoading && (
+                                <div className="flex justify-start">
+                                    <div className="bg-gray-100 px-4 py-3 rounded-2xl">
+                                        <div className="flex gap-1">
+                                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                                            <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input */}
+                        <div className="p-4 bg-white border-t flex gap-2">
+                            <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage(input)}
+                                className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                placeholder="Ask me anything..." disabled={isLoading} />
+                            <button onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()}
+                                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold">
+                                <Send size={18} /> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const BOTreePlatform = () => {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('home');
+            const [careerPath, setCareerPath] = useState(null);
+            const [showCareerSetup, setShowCareerSetup] = useState(false);
+            const [showEditProfile, setShowEditProfile] = useState(false);
+            const [showAskQuestion, setShowAskQuestion] = useState(false);
+            const [showCreateCommunity, setShowCreateCommunity] = useState(false);
+            const [activeChatCommunity, setActiveChatCommunity] = useState(null);
+
+            // Sample State Data
+            const [questions, setQuestions] = useState([
+                {
+                    id: 1,
+                    title: 'How to implement Binary Search Trees in Java?',
+                    content: 'I am struggling with implementing BST operations...',
+                    author: 'Priya Sharma',
+                    authorType: 'student',
+                    category: 'Programming',
+                    department: 'Computer Science',
+                    votes: 15,
+                    answers: 3,
+                    comments: [
+                        { id: 1, author: 'Dr. Rajesh Kumar', content: 'Start with understanding the basic structure...', votes: 8 },
+                        { id: 2, author: 'Amit Patel', content: 'Here is a good resource...', votes: 5 }
+                    ],
+                    timestamp: '2 hours ago'
+                },
+                {
+                    id: 2,
+                    title: 'Clarification on Thermodynamics Second Law',
+                    content: 'Can someone explain entropy in simpler terms?',
+                    author: 'Rahul Singh',
+                    authorType: 'student',
+                    category: 'Physics',
+                    department: 'Engineering',
+                    votes: 22,
+                    answers: 5,
+                    comments: [],
+                    timestamp: '5 hours ago'
+                }
+            ]);
+
+            const [communities, setCommunities] = useState([
+                { id: 1, name: 'Computer Science Hub', members: 245, posts: 1240, department: 'CS' },
+                { id: 2, name: 'Mechanical Engineering', members: 198, posts: 876, department: 'ME' },
+                { id: 3, name: 'Business Studies', members: 312, posts: 1450, department: 'MBA' }
+            ]);
+
+            // Dynamic roadmap based on selected career path
+            const careerRoadmap = careerPath ? careerRoadmaps[careerPath] : careerRoadmaps['Software Development'];
+
+            // Progress Tracker for students
+            const [progressLogs, setProgressLogs] = useState([
+                { id: 1, title: 'Completed Python Basics', description: 'Finished Codecademy Python course', category: 'Learning', date: '12/20/2024' },
+                { id: 2, title: 'Built Portfolio Website', description: 'Created personal portfolio using React', category: 'Project', date: '12/25/2024' }
+            ]);
+
+            const handleAddProgressLog = (log) => {
+                setProgressLogs([log, ...progressLogs]);
+            };
+
+            const [userProfile, setUserProfile] = useState({
+                name: 'Sumit Suryawanshi',
+                email: 'sumit.suryawanshi@college.edu',
+                phone: '+91 98765 43210',
+                department: 'Computer Science',
+                year: '3rd Year',
+                bio: 'Passionate about AI and Machine Learning',
+                location: 'Gwalior, India',
+                experiences: [
+                    { title: 'ML Intern', company: 'Tech Corp', duration: 'Summer 2024' },
+                    { title: 'Research Assistant', company: 'College Lab', duration: '2023-2024' }
+                ],
+                skills: ['Python', 'Machine Learning', 'Data Science'],
+                reputation: 450,
+                socialLinks: [
+                    { platform: 'LinkedIn', url: 'https://www.linkedin.com/in/sumit-suryawanshi-4526b62a4/' },
+                    { platform: 'GitHub', url: 'https://github.com/sumit-suryawanshi' }
+                ]
+            });
+
+            const handleLogin = (data) => {
+                setCurrentUser(data);
+                setUserProfile(prev => ({ ...prev, ...data })); // Update profile with login data
+                setActiveTab('home');
+            };
+
+            const handleSelectPath = (path) => {
+                setCareerPath(path);
+                setShowCareerSetup(false);
+                setActiveTab('roadmap');
+            };
+
+            const handleUpdateProfile = (updatedData) => {
+                setUserProfile(updatedData);
+                setShowEditProfile(false);
+            };
+
+            const handleAddQuestion = (questionData) => {
+                const newQ = { ...questionData, id: Date.now(), votes: 0, answers: 0, comments: [], timestamp: 'Just now' };
+                setQuestions([newQ, ...questions]);
+                setShowAskQuestion(false);
+            };
+
+            const handleCreateCommunity = (data) => {
+                const newComm = { id: Date.now(), name: data.name, members: 1, posts: 0, department: data.department };
+                setCommunities([...communities, newComm]);
+                setShowCreateCommunity(false);
+            };
+
+            if (!currentUser) {
+                return <LoginScreen onLogin={handleLogin} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <nav className="bg-white shadow-md sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-2xl font-bold text-green-700">🌳 BO Tree</h1>
+                                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                        {currentUser.type === 'faculty' ? 'Faculty' : 'Student'}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <button onClick={() => setActiveTab('home')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'home' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <Home size={20} /> Home
+                                    </button>
+                                    {currentUser.type === 'student' ? (
+                                        <button onClick={() => setActiveTab('roadmap')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'roadmap' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                            <Target size={20} /> Career Path
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => setActiveTab('mentor')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'mentor' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                            <GraduationCap size={20} /> Mentor Dashboard
+                                        </button>
+                                    )}
+                                    <button onClick={() => setActiveTab('forum')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'forum' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <MessageSquare size={20} /> Q&A Forum
+                                    </button>
+                                    <button onClick={() => setActiveTab('community')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'community' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <Users size={20} /> Communities
+                                    </button>
+                                    <button onClick={() => setActiveTab('ai')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'ai' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <Bot size={20} /> AI Assistant
+                                    </button>
+                                    <button onClick={() => setActiveTab('profile')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'profile' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <User size={20} /> Profile
+                                    </button>
+                                    <button onClick={() => setCurrentUser(null)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition">
+                                        <LogOut size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main>
+                        {showCareerSetup && <CareerPathSetup onSelectPath={handleSelectPath} onSkip={() => setShowCareerSetup(false)} />}
+                        {showEditProfile && <EditProfileModal profile={userProfile} onSave={handleUpdateProfile} onCancel={() => setShowEditProfile(false)} />}
+                        {showAskQuestion && <AskQuestionModal onSubmit={handleAddQuestion} onCancel={() => setShowAskQuestion(false)} currentUser={currentUser} />}
+                        {showCreateCommunity && <CreateCommunityModal onSubmit={handleCreateCommunity} onCancel={() => setShowCreateCommunity(false)} />}
+                        {activeChatCommunity && <ChatView community={activeChatCommunity} onBack={() => setActiveChatCommunity(null)} currentUser={currentUser} />}
+
+                        {!activeChatCommunity && activeTab === 'home' && currentUser.type === 'student' && (
+                            <div className="max-w-6xl mx-auto p-6">
+                                <h2 className="text-3xl font-bold text-gray-800 mb-6">Welcome back, {currentUser.name}! 👋</h2>
+                                {!careerPath && (
+                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-xl shadow-lg mb-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="text-2xl font-bold mb-2">🎯 Plan Your Future Career</h3>
+                                                <p className="text-white text-opacity-90">Get a personalized roadmap with opportunities, events, and mentorship</p>
+                                            </div>
+                                            <button onClick={() => setShowCareerSetup(true)} className="bg-white text-purple-600 px-6 py-3 rounded-lg hover:bg-gray-100 font-semibold">
+                                                Get Started
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-lg font-semibold mb-2">Questions Asked</h3>
+                                        <p className="text-4xl font-bold">24</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-lg font-semibold mb-2">Answers Given</h3>
+                                        <p className="text-4xl font-bold">56</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-lg font-semibold mb-2">Reputation</h3>
+                                        <p className="text-4xl font-bold">{userProfile.reputation}</p>
+                                    </div>
+                                </div>
+                                <ForumView questions={questions} onAskQuestion={() => setShowAskQuestion(true)} />
+                            </div>
+                        )}
+
+                        {!activeChatCommunity && activeTab === 'home' && currentUser.type === 'faculty' && (
+                            <FacultyDashboard currentUser={currentUser} />
+                        )}
+
+                        {!activeChatCommunity && activeTab === 'roadmap' && currentUser.type === 'student' && (
+                            <>
+                                <CareerRoadmapView roadmap={careerRoadmap} onChangePath={() => setShowCareerSetup(true)} />
+                                <div className="max-w-7xl mx-auto px-6 pb-6">
+                                    <ProgressTracker progressLogs={progressLogs} onAddLog={handleAddProgressLog} />
+                                </div>
+                            </>
+                        )}
+                        {!activeChatCommunity && activeTab === 'mentor' && currentUser.type === 'faculty' && <FacultyDashboard currentUser={currentUser} />}
+                        {!activeChatCommunity && activeTab === 'forum' && <ForumView questions={questions} onAskQuestion={() => setShowAskQuestion(true)} />}
+                        {!activeChatCommunity && activeTab === 'community' && <CommunityView communities={communities} onCreate={() => setShowCreateCommunity(true)} onOpenChat={(c) => setActiveChatCommunity(c)} />}
+                        {!activeChatCommunity && activeTab === 'ai' && <AIAssistant currentUser={currentUser} careerPath={careerPath} />}
+                        {!activeChatCommunity && activeTab === 'profile' && <ProfileView userProfile={userProfile} onEditClick={() => setShowEditProfile(true)} />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<BOTreePlatform />);
+    </script>
+</body>
+
+</html>
