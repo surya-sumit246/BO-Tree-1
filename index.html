@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BO Tree - Academic Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Ensure dynamic colors work
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Import Map for React and Lucide -->
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+            }
+        }
+    </script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <!-- Hidden div for Tailwind dynamic classes -->
+    <div class="hidden 
+        bg-blue-50 border-blue-200 hover:border-blue-400
+        bg-purple-50 border-purple-200 hover:border-purple-400
+        bg-green-50 border-green-200 hover:border-green-400
+        bg-indigo-50 border-indigo-200 hover:border-indigo-400
+        bg-orange-50 border-orange-200 hover:border-orange-400
+        bg-emerald-50 border-emerald-200 hover:border-emerald-400
+    "></div>
+
+    <script type="text/babel" data-type="module" data-presets="react">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import {
+            Home, MessageSquare, Users, User, LogOut, Plus, ThumbsUp, MessageCircle, Award, Filter, Search, Edit2, Mail,
+            Phone, MapPin, Briefcase, GraduationCap, Target, TrendingUp, Calendar, CheckCircle, Clock, AlertCircle, Zap, BookOpen,
+            ArrowLeft, Eye, EyeOff
+        } from 'lucide-react';
+
+        // --- Data & Constants ---
+
+        const branchCodes = {
+            'CB': 'Computer Science',
+            'ME': 'Mechanical Engineering',
+            'EC': 'Electronics & Communication',
+            'CE': 'Civil Engineering',
+            'EE': 'Electrical Engineering',
+            'IT': 'Information Technology',
+            'CH': 'Chemical Engineering',
+            'BT': 'Biotechnology'
+        };
+
+        const careerFields = [
+            { id: 1, name: 'Software Development', icon: '💻', color: 'blue' },
+            { id: 2, name: 'Data Science & AI', icon: '🤖', color: 'purple' },
+            { id: 3, name: 'Product Management', icon: '📊', color: 'green' },
+            { id: 4, name: 'Research & Academia', icon: '🔬', color: 'indigo' },
+            { id: 5, name: 'Entrepreneurship', icon: '🚀', color: 'orange' },
+            { id: 6, name: 'Finance & Banking', icon: '💰', color: 'emerald' }
+        ];
+
+        // --- Utils ---
+
+        const validateCollegeId = (id, type) => {
+            if (type === 'student') {
+                // Format: BTCB25O1100 (DegreeTypeBranchYearRollNumber)
+                const regex = /^([A-Z]{2})([A-Z]{2})(\d{2})O(\d{4})$/;
+                const match = id.match(regex);
+
+                if (!match) {
+                    return { valid: false, error: 'Invalid College ID format. Example: BTCB25O1100' };
+                }
+
+                const [_, degreeType, branch, year, rollNumber] = match;
+
+                if (!branchCodes[branch]) {
+                    return { valid: false, error: 'Invalid branch code' };
+                }
+
+                const degreeTypes = {
+                    'BT': 'B.Tech', 'MT': 'M.Tech', 'MB': 'MBA', 'MS': 'M.Sc', 'BS': 'B.Sc', 'BC': 'B.Com'
+                };
+
+                if (!degreeTypes[degreeType]) {
+                    return { valid: false, error: 'Invalid degree type. Use BT, MT, MB, MS, BS, or BC' };
+                }
+
+                return {
+                    valid: true,
+                    data: {
+                        degreeType: degreeTypes[degreeType],
+                        admissionYear: `20${year}`,
+                        branch: branchCodes[branch],
+                        branchCode: branch,
+                        rollNumber
+                    }
+                };
+            } else {
+                // Faculty ID format: FAC001
+                const regex = /^FAC\d{3,5}$/;
+                if (!regex.test(id)) {
+                    return { valid: false, error: 'Invalid Faculty ID format. Example: FAC001' };
+                }
+                return { valid: true, data: {} };
+            }
+        };
+
+        const generateEmail = (collegeId, type) => {
+            if (type === 'student') {
+                return `${collegeId.toLowerCase()}@college.edu`;
+            } else {
+                return `${collegeId.toLowerCase()}@faculty.college.edu`;
+            }
+        };
+
+        // --- Components ---
+
+        const LoginScreen = ({ onLogin }) => {
+            const [loginType, setLoginType] = useState(null); // 'student' or 'faculty'
+            const [showRegister, setShowRegister] = useState(false);
+            const [showPassword, setShowPassword] = useState(false);
+            const [formErrors, setFormErrors] = useState({});
+
+            // Login Form State
+            const [loginForm, setLoginForm] = useState({ collegeId: '', password: '' });
+
+            // Register Form State
+            const [registerForm, setRegisterForm] = useState({
+                name: '', collegeId: '', email: '', password: '', confirmPassword: '',
+                branch: '', year: '', rollNumber: '', phone: ''
+            });
+
+            const handleRegisterSubmit = (e) => {
+                e.preventDefault();
+                const errors = {};
+
+                if (!registerForm.name.trim()) errors.name = 'Name is required';
+                if (!registerForm.collegeId.trim()) errors.collegeId = 'College ID is required';
+                if (!registerForm.password) errors.password = 'Password is required';
+                if (registerForm.password.length < 6) errors.password = 'Password must be at least 6 characters';
+                if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+
+                const idValidation = validateCollegeId(registerForm.collegeId, loginType);
+                if (!idValidation.valid) {
+                    errors.collegeId = idValidation.error;
+                }
+
+                if (Object.keys(errors).length > 0) {
+                    setFormErrors(errors);
+                    return;
+                }
+
+                const email = generateEmail(registerForm.collegeId, loginType);
+                const userData = {
+                    type: loginType,
+                    name: registerForm.name,
+                    collegeId: registerForm.collegeId,
+                    email: email,
+                    ...idValidation.data
+                };
+
+                onLogin(userData);
+            };
+
+            const handleLoginSubmit = (e) => {
+                e.preventDefault();
+                const errors = {};
+
+                if (!loginForm.collegeId.trim()) {
+                    errors.collegeId = 'College ID is required';
+                    setFormErrors(errors);
+                    return;
+                }
+                if (!loginForm.password) {
+                    errors.password = 'Password is required';
+                    setFormErrors(errors);
+                    return;
+                }
+
+                // Validate College ID format
+                const idValidation = validateCollegeId(loginForm.collegeId, loginType);
+                if (!idValidation.valid) {
+                    errors.collegeId = idValidation.error;
+                    setFormErrors(errors);
+                    return;
+                }
+
+                const email = generateEmail(loginForm.collegeId, loginType);
+                const userData = {
+                    type: loginType,
+                    name: loginType === 'student' ? 'Ananya Verma' : 'Dr. Rajesh Kumar',
+                    collegeId: loginForm.collegeId,
+                    email: email,
+                    ...idValidation.data
+                };
+
+                onLogin(userData);
+            };
+
+            if (showRegister) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl">
+                            <button onClick={() => {
+                                setShowRegister(false);
+                                setFormErrors({});
+                                setRegisterForm({
+                                    name: '', collegeId: '', email: '', password: '',
+                                    confirmPassword: '', branch: '', year: '', rollNumber: '', phone: ''
+                                });
+                            }}
+                                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+                            >
+                                <ArrowLeft size={20} />
+                                Back to Login
+                            </button>
+
+                            <div className="text-center mb-6">
+                                <h1 className="text-3xl font-bold text-green-700 mb-2">Register for BO Tree</h1>
+                                <p className="text-gray-600">Create your {loginType} account</p>
+                            </div>
+
+                            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                    <input type="text" value={registerForm.name} onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder="Enter your full name"
+                                    />
+                                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        College ID *
+                                        <span className="text-xs text-gray-500 ml-2">
+                                            {loginType === 'student' ? '(Format: BTCB25O1100)' : '(Format: FAC001)'}
+                                        </span>
+                                    </label>
+                                    <input type="text" value={registerForm.collegeId} onChange={(e) => {
+                                        const value = e.target.value.toUpperCase();
+                                        setRegisterForm(prev => {
+                                            const newState = { ...prev, collegeId: value };
+                                            if (value.length > 0) {
+                                                newState.email = generateEmail(value, loginType);
+                                            }
+                                            return newState;
+                                        });
+                                    }}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder={loginType === 'student' ? "BTCB25O1100" : "FAC001"}
+                                    />
+                                    {formErrors.collegeId && <p className="text-red-500 text-sm mt-1">{formErrors.collegeId}</p>}
+
+                                    {loginType === 'student' && (
+                                        <div className="mt-2 text-xs text-gray-600 bg-blue-50 p-3 rounded-lg">
+                                            <p className="font-semibold mb-1">ID Format Breakdown:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li><strong>BT</strong> - Degree type</li>
+                                                <li><strong>CB</strong> - Branch code</li>
+                                                <li><strong>25</strong> - Admission year (2025)</li>
+                                                <li><strong>O</strong> - Separator (always 'O')</li>
+                                                <li><strong>1100</strong> - Roll number</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        College Email (Auto-generated)
+                                    </label>
+                                    <input type="email" value={registerForm.email} readOnly
+                                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 outline-none"
+                                        placeholder="Email will be generated from College ID"
+                                    />
+                                </div>
+
+                                {loginType === 'student' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                        <input type="tel" value={registerForm.phone} onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                            placeholder="+91 98765 43210"
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                                    <div className="relative">
+                                        <input type={showPassword ? "text" : "password"} value={registerForm.password} onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none pr-10"
+                                            placeholder="Minimum 6 characters"
+                                        />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                        >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                    {formErrors.password && <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                                    <input type={showPassword ? "text" : "password"} value={registerForm.confirmPassword}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder="Re-enter your password"
+                                    />
+                                    {formErrors.confirmPassword && <p className="text-red-500 text-sm mt-1">{formErrors.confirmPassword}</p>}
+                                </div>
+
+                                <button type="submit"
+                                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                                    Create Account
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (loginType) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                            <button onClick={() => {
+                                setLoginType(null);
+                                setFormErrors({});
+                                setLoginForm({ collegeId: '', password: '' });
+                            }}
+                                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+                            >
+                                <ArrowLeft size={20} />
+                                Back
+                            </button>
+
+                            <div className="text-center mb-8">
+                                <h1 className="text-3xl font-bold text-green-700 mb-2">
+                                    {loginType === 'student' ? 'Student Login' : 'Faculty Login'}
+                                </h1>
+                                <p className="text-gray-600">Sign in with your college credentials</p>
+                            </div>
+
+                            <form onSubmit={handleLoginSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        College ID
+                                        <span className="text-xs text-gray-500 ml-2">
+                                            {loginType === 'student' ? '(e.g., BTCB25O1100)' : '(e.g., FAC001)'}
+                                        </span>
+                                    </label>
+                                    <input type="text" value={loginForm.collegeId} onChange={(e) => setLoginForm({ ...loginForm, collegeId: e.target.value.toUpperCase() })}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        placeholder={loginType === 'student' ? "BTCB25O1100" : "FAC001"}
+                                    />
+                                    {formErrors.collegeId && <p className="text-red-500 text-sm mt-1">{formErrors.collegeId}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                    <div className="relative">
+                                        <input type={showPassword ? "text" : "password"} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none pr-10"
+                                            placeholder="Enter your password"
+                                        />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                        >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                    {formErrors.password && <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>}
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm">
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" className="rounded" />
+                                        <span className="text-gray-600">Remember me</span>
+                                    </label>
+                                    <a href="#" className="text-green-600 hover:text-green-700">Forgot password?</a>
+                                </div>
+
+                                <button type="submit"
+                                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                                    Sign In
+                                </button>
+                            </form>
+
+                            <div className="mt-6 text-center">
+                                <p className="text-gray-600">
+                                    Don't have an account?{' '}
+                                    <button onClick={() => { setShowRegister(true); setFormErrors({}); }}
+                                        className="text-green-600 hover:text-green-700 font-semibold"
+                                    >
+                                        Register here
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-bold text-green-700 mb-2">🌳 BO Tree</h1>
+                            <p className="text-gray-600">Grow Your Knowledge Together</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <button onClick={() => setLoginType('student')}
+                                className="w-full bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 transition font-semibold text-lg"
+                            >
+                                Student Login
+                            </button>
+
+                            <button onClick={() => setLoginType('faculty')}
+                                className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-semibold text-lg"
+                            >
+                                Faculty Login
+                            </button>
+                        </div>
+
+                        <p className="text-center text-sm text-gray-500 mt-6">
+                            Use your official college ID to access the platform
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProfileView = ({ userProfile }) => (
+            <div className="max-w-4xl mx-auto p-6">
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div className="bg-gradient-to-r from-green-600 to-blue-600 h-32"></div>
+                    <div className="px-6 pb-6">
+                        <div className="flex items-start -mt-16 mb-4">
+                            <div className="bg-white rounded-full p-2 shadow-lg">
+                                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                                    {userProfile.name.charAt(0)}
+                                </div>
+                            </div>
+                            <button className="ml-auto mt-20 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                                <Edit2 size={16} />
+                                Edit Profile
+                            </button>
+                        </div>
+
+                        <h2 className="text-3xl font-bold text-gray-800">{userProfile.name}</h2>
+                        <p className="text-gray-600">{userProfile.department} | {userProfile.year || 'Faculty'}</p>
+
+                        <div className="flex items-center gap-6 mt-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-2"><Mail size={16} />{userProfile.email}</div>
+                            <div className="flex items-center gap-2"><Phone size={16} />{userProfile.phone}</div>
+                            <div className="flex items-center gap-2"><MapPin size={16} />{userProfile.location}</div>
+                        </div>
+
+                        <div className="mt-4 p-4 bg-green-50 rounded-lg flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Award size={24} className="text-green-600" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Reputation Score</p>
+                                    <p className="text-2xl font-bold text-green-600">{userProfile.reputation}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-2">About</h3>
+                            <p className="text-gray-700">{userProfile.bio}</p>
+                        </div>
+
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                                <Briefcase size={20} />
+                                Experience
+                            </h3>
+                            {userProfile.experiences && userProfile.experiences.map((exp, idx) => (
+                                <div key={idx} className="mb-3 p-4 bg-gray-50 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800">{exp.title}</h4>
+                                    <p className="text-gray-600">{exp.company}</p>
+                                    <p className="text-sm text-gray-500">{exp.duration}</p>
+                                </div>
+                            ))}
+                            <button className="mt-2 text-green-600 hover:text-green-700 flex items-center gap-2">
+                                <Plus size={16} />
+                                Add Experience
+                            </button>
+                        </div>
+
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-3">Skills</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {userProfile.skills && userProfile.skills.map((skill, idx) => (
+                                    <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">{skill}</span>
+                                ))}
+                                <button className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-gray-200">+ Add Skill</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const ForumView = ({ questions }) => (
+            <div className="max-w-6xl mx-auto p-6">
+                <div className="mb-6 flex gap-4">
+                    <div className="flex-1">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                            <input type="text" placeholder="Search questions..."
+                                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+                        </div>
+                    </div>
+                    <select className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                        <option>All Categories</option>
+                        <option>Programming</option>
+                        <option>Physics</option>
+                        <option>Mathematics</option>
+                    </select>
+                    <button
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold">
+                        <Plus size={20} />
+                        Ask Question
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    {questions.map(q => (
+                        <div key={q.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+                            <div className="flex gap-4">
+                                <div className="flex flex-col items-center gap-2">
+                                    <button className="text-gray-400 hover:text-green-600">
+                                        <ThumbsUp size={20} />
+                                    </button>
+                                    <span className="text-lg font-bold text-gray-700">{q.votes}</span>
+                                </div>
+
+                                <div className="flex-1">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 className="text-xl font-semibold text-gray-800 hover:text-green-600 cursor-pointer">
+                                                {q.title}
+                                            </h3>
+                                            <p className="text-gray-600 mt-1">{q.content}</p>
+                                        </div>
+                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                                            {q.category}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-sm text-gray-500 mt-4">
+                                        <span>Asked by <strong>{q.author}</strong> ({q.authorType})</span>
+                                        <span>•</span>
+                                        <span>{q.timestamp}</span>
+                                        <span>•</span>
+                                        <span className="flex items-center gap-1">
+                                            <MessageCircle size={16} />
+                                            {q.answers} answers
+                                        </span>
+                                    </div>
+
+                                    {q.comments.length > 0 && (
+                                        <div className="mt-4 space-y-2 border-l-2 border-gray-200 pl-4">
+                                            {q.comments.map(comment => (
+                                                <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-700">{comment.author}</p>
+                                                            <p className="text-sm text-gray-600 mt-1">{comment.content}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-green-600">
+                                                            <ThumbsUp size={14} />
+                                                            <span className="text-sm">{comment.votes}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <button className="text-green-600 text-sm hover:text-green-700 flex items-center gap-1 mt-2">
+                                                <Plus size={14} />
+                                                Add Comment
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const CommunityView = ({ communities }) => (
+            <div className="max-w-6xl mx-auto p-6">
+                <h2 className="text-3xl font-bold text-gray-800 mb-6">Department Communities</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {communities.map(community => (
+                        <div key={community.id}
+                            className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition cursor-pointer">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                                    {community.department}
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-800">{community.name}</h3>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-600 mb-4">
+                                <div className="flex items-center gap-1"><Users size={16} /><span>{community.members} members</span></div>
+                                <div className="flex items-center gap-1"><MessageSquare size={16} /><span>{community.posts} posts</span></div>
+                            </div>
+                            <button className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition font-semibold">
+                                Join Community
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const CareerPathSetup = ({ onSelectPath, onSkip }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="p-8">
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Career Path 🎯</h2>
+                            <p className="text-gray-600">Select a field you want to pursue, and we'll create a personalized roadmap for you</p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                            {careerFields.map(field => (
+                                <button key={field.id} onClick={() => onSelectPath(field.name)}
+                                    className={`p-6 border-2 rounded-xl hover:shadow-lg transition bg-${field.color}-50 border-${field.color}-200 hover:border-${field.color}-400`}
+                                >
+                                    <div className="text-4xl mb-3">{field.icon}</div>
+                                    <h3 className="font-semibold text-gray-800">{field.name}</h3>
+                                </button>
+                            ))}
+                        </div>
+
+                        <button onClick={onSkip} className="w-full py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            Skip for Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const CareerRoadmapView = ({ roadmap, onChangePath }) => (
+            <div className="max-w-7xl mx-auto p-6">
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                            <Target className="text-green-600" size={32} />
+                            Your Career Roadmap
+                        </h2>
+                        <p className="text-gray-600 mt-1">Personalized path to become a {roadmap.field} professional</p>
+                    </div>
+                    <button onClick={onChangePath}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                        <Edit2 size={16} />
+                        Change Path
+                    </button>
+                </div>
+
+                {/* Progress Overview */}
+                <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-2xl font-bold">Overall Progress</h3>
+                            <p className="opacity-90">Keep pushing forward! 🚀</p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-4xl font-bold">{roadmap.progress}%</div>
+                            <div className="text-sm opacity-90">{roadmap.currentLevel}</div>
+                        </div>
+                    </div>
+                    <div className="bg-white bg-opacity-20 rounded-full h-3">
+                        <div className="bg-white rounded-full h-3 transition-all duration-500" style={{ width: `${roadmap.progress}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-6">
+                    {/* Left Column */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Events */}
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Zap className="text-yellow-500" size={24} />
+                                Upcoming Opportunities
+                            </h3>
+                            <div className="space-y-3">
+                                {roadmap.upcomingEvents.map(event => (
+                                    <div key={event.id} className="border-l-4 border-green-500 pl-4 py-3 bg-green-50 rounded-r-lg hover:bg-green-100 transition cursor-pointer">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <h4 className="font-semibold text-gray-800">{event.title}</h4>
+                                                <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                                                    <span className="flex items-center gap-1"><Calendar size={14} />{event.date}</span>
+                                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{event.type}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <TrendingUp className="text-green-600" size={16} />
+                                                <span className="text-sm font-semibold text-green-600">{event.relevance}% Match</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {/* Milestones */}
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <BookOpen size={24} className="text-blue-500" />
+                                Your Learning Path
+                            </h3>
+                            <div className="space-y-4">
+                                {roadmap.milestones.map((milestone, idx) => (
+                                    <div key={milestone.id} className="flex gap-4">
+                                        <div className="flex flex-col items-center">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${milestone.status === 'completed' ? 'bg-green-500' : milestone.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                                                {milestone.status === 'completed' ? <CheckCircle className="text-white" size={20} /> :
+                                                    milestone.status === 'in-progress' ? <Clock className="text-white" size={20} /> :
+                                                        <AlertCircle className="text-white" size={20} />}
+                                            </div>
+                                            {idx < roadmap.milestones.length - 1 && (
+                                                <div className={`w-0.5 h-16 ${milestone.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 pb-8">
+                                            <h4 className="font-semibold text-gray-800">{milestone.title}</h4>
+                                            <p className="text-sm text-gray-500 mt-1">{milestone.date}</p>
+                                            <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${milestone.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                    milestone.status === 'in-progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                {milestone.status === 'completed' ? 'Completed' : milestone.status === 'in-progress' ? 'In Progress' : 'Upcoming'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4">Skills to Master</h3>
+                            <div className="space-y-4">
+                                {roadmap.recommendedSkills.map((skill, idx) => (
+                                    <div key={idx}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-medium text-gray-700">{skill.skill}</span>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${skill.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{skill.priority}</span>
+                                        </div>
+                                        <div className="bg-gray-200 rounded-full h-2">
+                                            <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-full h-2" style={{ width: `${skill.progress}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const BOTreePlatform = () => {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('home');
+            const [careerPath, setCareerPath] = useState(null);
+            const [showCareerSetup, setShowCareerSetup] = useState(false);
+
+            // Sample State Data
+            const [questions] = useState([
+                {
+                    id: 1,
+                    title: 'How to implement Binary Search Trees in Java?',
+                    content: 'I am struggling with implementing BST operations...',
+                    author: 'Priya Sharma',
+                    authorType: 'student',
+                    category: 'Programming',
+                    department: 'Computer Science',
+                    votes: 15,
+                    answers: 3,
+                    comments: [
+                        { id: 1, author: 'Dr. Rajesh Kumar', content: 'Start with understanding the basic structure...', votes: 8 },
+                        { id: 2, author: 'Amit Patel', content: 'Here is a good resource...', votes: 5 }
+                    ],
+                    timestamp: '2 hours ago'
+                },
+                {
+                    id: 2,
+                    title: 'Clarification on Thermodynamics Second Law',
+                    content: 'Can someone explain entropy in simpler terms?',
+                    author: 'Rahul Singh',
+                    authorType: 'student',
+                    category: 'Physics',
+                    department: 'Engineering',
+                    votes: 22,
+                    answers: 5,
+                    comments: [],
+                    timestamp: '5 hours ago'
+                }
+            ]);
+
+            const [communities] = useState([
+                { id: 1, name: 'Computer Science Hub', members: 245, posts: 1240, department: 'CS' },
+                { id: 2, name: 'Mechanical Engineering', members: 198, posts: 876, department: 'ME' },
+                { id: 3, name: 'Business Studies', members: 312, posts: 1450, department: 'MBA' }
+            ]);
+
+            const [careerRoadmap] = useState({
+                field: 'Data Science & AI',
+                currentLevel: 'Beginner',
+                progress: 35,
+                milestones: [
+                    { id: 1, title: 'Learn Python Basics', status: 'completed', date: 'Jan 2025' },
+                    { id: 2, title: 'Complete ML Course', status: 'in-progress', date: 'Feb 2025' },
+                    { id: 3, title: 'Build 3 Projects', status: 'upcoming', date: 'Mar 2025' },
+                    { id: 4, title: 'Internship Application', status: 'upcoming', date: 'Apr 2025' }
+                ],
+                upcomingEvents: [
+                    { id: 1, title: 'AI Hackathon 2025', date: 'Jan 15, 2025', type: 'Competition', relevance: 95 },
+                    { id: 2, title: 'Google ML Workshop', date: 'Jan 20, 2025', type: 'Workshop', relevance: 98 },
+                    { id: 3, title: 'Data Science Internship - TCS', date: 'Feb 1, 2025', type: 'Opportunity', relevance: 92 }
+                ],
+                recommendedSkills: [
+                    { skill: 'Python', priority: 'High', progress: 70 },
+                    { skill: 'Machine Learning', priority: 'High', progress: 45 },
+                    { skill: 'SQL', priority: 'Medium', progress: 60 },
+                    { skill: 'Deep Learning', priority: 'Medium', progress: 20 }
+                ],
+                mentors: [
+                    { name: 'Dr. Rajesh Kumar', expertise: 'Machine Learning', available: true },
+                    { name: 'Prof. Meera Shah', expertise: 'Data Science', available: true }
+                ]
+            });
+
+            const [userProfile, setUserProfile] = useState({
+                name: 'Ananya Verma',
+                email: 'ananya.verma@college.edu',
+                phone: '+91 98765 43210',
+                department: 'Computer Science',
+                year: '3rd Year',
+                bio: 'Passionate about AI and Machine Learning',
+                location: 'Mumbai, India',
+                experiences: [
+                    { title: 'ML Intern', company: 'Tech Corp', duration: 'Summer 2024' },
+                    { title: 'Research Assistant', company: 'College Lab', duration: '2023-2024' }
+                ],
+                skills: ['Python', 'Machine Learning', 'Data Science'],
+                reputation: 450
+            });
+
+            const handleLogin = (data) => {
+                setCurrentUser(data);
+                setUserProfile(prev => ({ ...prev, ...data })); // Update profile with login data
+                setActiveTab('home');
+            };
+
+            const handleSelectPath = (path) => {
+                setCareerPath(path);
+                setShowCareerSetup(false);
+                setActiveTab('roadmap');
+            };
+
+            if (!currentUser) {
+                return <LoginScreen onLogin={handleLogin} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <nav className="bg-white shadow-md sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-2xl font-bold text-green-700">🌳 BO Tree</h1>
+                                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                        {currentUser.type === 'faculty' ? 'Faculty' : 'Student'}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <button onClick={() => setActiveTab('home')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'home' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <Home size={20} /> Home
+                                    </button>
+                                    <button onClick={() => setActiveTab('roadmap')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'roadmap' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <Target size={20} /> Career Path
+                                    </button>
+                                    <button onClick={() => setActiveTab('forum')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'forum' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <MessageSquare size={20} /> Q&A Forum
+                                    </button>
+                                    <button onClick={() => setActiveTab('community')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'community' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <Users size={20} /> Communities
+                                    </button>
+                                    <button onClick={() => setActiveTab('profile')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${activeTab === 'profile' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        <User size={20} /> Profile
+                                    </button>
+                                    <button onClick={() => setCurrentUser(null)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition">
+                                        <LogOut size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main>
+                        {showCareerSetup && <CareerPathSetup onSelectPath={handleSelectPath} onSkip={() => setShowCareerSetup(false)} />}
+
+                        {activeTab === 'home' && (
+                            <div className="max-w-6xl mx-auto p-6">
+                                <h2 className="text-3xl font-bold text-gray-800 mb-6">Welcome back, {currentUser.name}! 👋</h2>
+                                {!careerPath && (
+                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-xl shadow-lg mb-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="text-2xl font-bold mb-2">🎯 Plan Your Future Career</h3>
+                                                <p className="text-white text-opacity-90">Get a personalized roadmap with opportunities, events, and mentorship</p>
+                                            </div>
+                                            <button onClick={() => setShowCareerSetup(true)} className="bg-white text-purple-600 px-6 py-3 rounded-lg hover:bg-gray-100 font-semibold">
+                                                Get Started
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-lg font-semibold mb-2">Questions Asked</h3>
+                                        <p className="text-4xl font-bold">24</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-lg font-semibold mb-2">Answers Given</h3>
+                                        <p className="text-4xl font-bold">56</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-lg font-semibold mb-2">Reputation</h3>
+                                        <p className="text-4xl font-bold">{userProfile.reputation}</p>
+                                    </div>
+                                </div>
+                                <ForumView questions={questions} />
+                            </div>
+                        )}
+
+                        {activeTab === 'roadmap' && <CareerRoadmapView roadmap={careerRoadmap} onChangePath={() => setShowCareerSetup(true)} />}
+                        {activeTab === 'forum' && <ForumView questions={questions} />}
+                        {activeTab === 'community' && <CommunityView communities={communities} />}
+                        {activeTab === 'profile' && <ProfileView userProfile={userProfile} />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<BOTreePlatform />);
+    </script>
+</body>
+
+</html>
